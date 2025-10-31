@@ -198,34 +198,77 @@ def main():
     </div>
     
     <script>
+        // URLs das versões Desktop e Mobile
+        const desktopUrl = "{POWER_BI_EMBED_URL_DESKTOP}";
+        const mobileUrl = "{POWER_BI_EMBED_URL_MOBILE}";
+        
         // Função para verificar se deve usar versão mobile (baseado na largura da viewport)
         function isMobileView() {{
-            return window.innerWidth <= 768;
+            const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+            const isMobile = width <= 768;
+            console.log('Largura detectada:', width, '| É mobile?', isMobile);
+            return isMobile;
+        }}
+        
+        // Função para verificar qual URL está sendo usada atualmente
+        function getCurrentUrlType(currentSrc) {{
+            if (currentSrc.includes('a02c9e61-ca48-4fee-87fb-732616424882')) {{
+                return 'MOBILE';
+            }} else if (currentSrc.includes('461bfacf-024d-4a61-8149-7f8966c1ee3b')) {{
+                return 'DESKTOP';
+            }}
+            return 'UNKNOWN';
         }}
         
         // Função para atualizar o iframe baseado no tamanho da viewport
         function updatePowerBIUrl() {{
             const iframe = document.getElementById('powerbi-iframe');
-            if (!iframe) return;
+            if (!iframe) {{
+                console.log('Iframe não encontrado!');
+                return;
+            }}
             
             const isMobile = isMobileView();
-            
-            // URLs das versões Desktop e Mobile
-            const desktopUrl = "{POWER_BI_EMBED_URL_DESKTOP}";
-            const mobileUrl = "{POWER_BI_EMBED_URL_MOBILE}";
-            
-            // Define a URL baseado no tamanho da viewport
             const targetUrl = isMobile ? mobileUrl : desktopUrl;
+            const currentUrlType = getCurrentUrlType(iframe.src);
             
-            // Atualiza o src do iframe apenas se for diferente
-            if (iframe.src !== targetUrl) {{
+            // Compara usando includes para garantir que funciona mesmo com parâmetros adicionais
+            const shouldUpdate = isMobile 
+                ? !iframe.src.includes('a02c9e61-ca48-4fee-87fb-732616424882')
+                : !iframe.src.includes('461bfacf-024d-4a61-8149-7f8966c1ee3b');
+            
+            console.log('Estado atual:', {{
+                largura: window.innerWidth || document.documentElement.clientWidth,
+                isMobile: isMobile,
+                urlAtual: currentUrlType,
+                urlAlvo: isMobile ? 'MOBILE' : 'DESKTOP',
+                deveAtualizar: shouldUpdate
+            }});
+            
+            // Atualiza o src do iframe se necessário
+            if (shouldUpdate) {{
+                console.log('Atualizando URL do Power BI para:', isMobile ? 'MOBILE' : 'DESKTOP');
                 iframe.src = targetUrl;
-                console.log('Power BI URL atualizada para:', isMobile ? 'MOBILE' : 'DESKTOP');
+                console.log('URL atualizada com sucesso!');
+            }} else {{
+                console.log('URL já está correta, não precisa atualizar.');
             }}
         }}
         
-        // Atualiza quando a página carrega
-        updatePowerBIUrl();
+        // Executa quando o DOM estiver pronto
+        function initPowerBI() {{
+            // Aguarda um pouco para garantir que o iframe foi renderizado
+            setTimeout(function() {{
+                updatePowerBIUrl();
+            }}, 100);
+        }}
+        
+        // Executa quando a página carrega
+        if (document.readyState === 'loading') {{
+            document.addEventListener('DOMContentLoaded', initPowerBI);
+        }} else {{
+            initPowerBI();
+        }}
         
         // Atualiza quando a janela é redimensionada (inclui zoom)
         let resizeTimeout;
@@ -238,6 +281,17 @@ def main():
         window.addEventListener('orientationchange', function() {{
             setTimeout(updatePowerBIUrl, 200);
         }});
+        
+        // Monitora mudanças no tamanho da viewport usando MutationObserver (fallback)
+        if (window.ResizeObserver) {{
+            const resizeObserver = new ResizeObserver(function(entries) {{
+                updatePowerBIUrl();
+            }});
+            const container = document.querySelector('.powerbi-container');
+            if (container) {{
+                resizeObserver.observe(container);
+            }}
+        }}
     </script>
     """
     
