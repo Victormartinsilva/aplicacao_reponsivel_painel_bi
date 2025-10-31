@@ -199,7 +199,7 @@ def main():
                 title="acompanhamento_servicos_seinfra"
                 width="100%" 
                 height="100%" 
-                src="{POWER_BI_EMBED_URL}"
+                src="{POWER_BI_EMBED_URL}&pageName=ReportSection"
                 frameborder="0" 
                 allowFullScreen="true"
                 allow="fullscreen; clipboard-read; clipboard-write; autoplay; camera; microphone; payment"
