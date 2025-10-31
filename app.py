@@ -88,6 +88,18 @@ st.markdown("""
             /* Remove a borda padrão do iframe */
             border: none;
         }
+        
+        /* Força largura máxima do wrapper e iframe em mobile */
+        @media (max-width: 768px) {
+            .powerbi-embed-wrapper {
+                max-width: 767px !important;
+                width: 100% !important;
+            }
+            
+            .powerbi-embed-wrapper iframe {
+                max-width: 767px !important;
+            }
+        }
 
         /*
         * Media Query para dispositivos móveis (largura máxima de 768px).
