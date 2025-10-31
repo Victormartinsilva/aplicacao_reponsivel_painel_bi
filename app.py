@@ -192,8 +192,7 @@ def main():
                 src="{POWER_BI_EMBED_URL_DESKTOP}"
                 frameborder="0" 
                 allowFullScreen="true"
-                allow="fullscreen; clipboard-read; clipboard-write"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
+                allow="fullscreen; clipboard-read; clipboard-write; autoplay; camera; microphone; payment"
                 style="position: absolute; top: 0; left: 0; border: none;"
             ></iframe>
         </div>
