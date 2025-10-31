@@ -150,6 +150,22 @@ st.markdown("""
             padding: 5px 10px;
             margin-bottom: 0;
         }
+        
+        /* Remove margens e paddings do componente Streamlit */
+        iframe[data-testid="stIFrame"] {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* Remove espaçamento do componente HTML do Streamlit */
+        .stApp > div > div > div > div > div {
+            margin-top: 0 !important;
+        }
+        
+        /* Ajusta o espaçamento após o indicador */
+        div[data-testid="stVerticalBlock"] {
+            gap: 0 !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -164,23 +180,22 @@ def main():
     # Indicador de dispositivo (Desktop/Mobile) usando HTML
     st.markdown('<div class="device-indicator"></div>', unsafe_allow_html=True)
     
-    # Container para o Power BI
-    st.markdown('<div class="powerbi-container">', unsafe_allow_html=True)
-    st.markdown('<div class="powerbi-embed-wrapper">', unsafe_allow_html=True)
-    
-    # HTML com JavaScript para detectar tamanho da viewport e trocar URL dinamicamente
-    # Isso funciona mesmo com zoom, pois monitora o tamanho real da viewport
+    # HTML completo com container, wrapper e iframe - tudo em um componente para posicionamento correto
     powerbi_html = f"""
-    <iframe 
-        id="powerbi-iframe" 
-        title="acompanhamento_servicos_seinfra"
-        width="100%" 
-        height="100%" 
-        src="{POWER_BI_EMBED_URL_DESKTOP}"
-        frameborder="0" 
-        allowFullScreen="true"
-        style="position: absolute; top: 0; left: 0; border: none;"
-    ></iframe>
+    <div class="powerbi-container">
+        <div class="powerbi-embed-wrapper">
+            <iframe 
+                id="powerbi-iframe" 
+                title="acompanhamento_servicos_seinfra"
+                width="100%" 
+                height="100%" 
+                src="{POWER_BI_EMBED_URL_DESKTOP}"
+                frameborder="0" 
+                allowFullScreen="true"
+                style="position: absolute; top: 0; left: 0; border: none;"
+            ></iframe>
+        </div>
+    </div>
     
     <script>
         // Função para verificar se deve usar versão mobile (baseado na largura da viewport)
@@ -191,6 +206,8 @@ def main():
         // Função para atualizar o iframe baseado no tamanho da viewport
         function updatePowerBIUrl() {{
             const iframe = document.getElementById('powerbi-iframe');
+            if (!iframe) return;
+            
             const isMobile = isMobileView();
             
             // URLs das versões Desktop e Mobile
@@ -224,11 +241,9 @@ def main():
     </script>
     """
     
-    # Incorpora o HTML com JavaScript usando st.components.v1.html()
-    st.components.v1.html(powerbi_html, height=600)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Incorpora o HTML completo usando st.components.v1.html()
+    # A altura será controlada pelo CSS padding-bottom do wrapper
+    st.components.v1.html(powerbi_html, height=650, scrolling=False)
     
     # Nota informativa
     with st.expander("ℹ️ Sobre esta aplicação"):
