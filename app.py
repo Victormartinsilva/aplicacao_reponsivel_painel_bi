@@ -203,19 +203,37 @@ def main():
         const desktopUrl = "{POWER_BI_EMBED_URL_DESKTOP}";
         const mobileUrl = "{POWER_BI_EMBED_URL_MOBILE}";
         
+        // IDs dos reports para verificação
+        const MOBILE_REPORT_ID = 'a02c9e61-ca48-4fee-87fb-732616424882';
+        const DESKTOP_REPORT_ID = '461bfacf-024d-4a61-8149-7f8966c1ee3b';
+        
+        // Função para obter largura da viewport (funciona mesmo em iframe)
+        function getViewportWidth() {{
+            // Tenta acessar window.parent se estiver em iframe
+            try {{
+                if (window.parent && window.parent !== window) {{
+                    return window.parent.innerWidth || window.parent.document.documentElement.clientWidth || window.parent.document.body.clientWidth;
+                }}
+            }} catch(e) {{
+                // Se não conseguir acessar parent (CORS), usa o window atual
+            }}
+            // Fallback para window atual
+            return window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth || screen.width;
+        }}
+        
         // Função para verificar se deve usar versão mobile (baseado na largura da viewport)
         function isMobileView() {{
-            const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+            const width = getViewportWidth();
             const isMobile = width <= 768;
-            console.log('Largura detectada:', width, '| É mobile?', isMobile);
+            console.log('[Power BI] Largura detectada:', width, 'px | É mobile?', isMobile, '| Breakpoint: 768px');
             return isMobile;
         }}
         
         // Função para verificar qual URL está sendo usada atualmente
         function getCurrentUrlType(currentSrc) {{
-            if (currentSrc.includes('a02c9e61-ca48-4fee-87fb-732616424882')) {{
+            if (currentSrc.includes(MOBILE_REPORT_ID)) {{
                 return 'MOBILE';
-            }} else if (currentSrc.includes('461bfacf-024d-4a61-8149-7f8966c1ee3b')) {{
+            }} else if (currentSrc.includes(DESKTOP_REPORT_ID)) {{
                 return 'DESKTOP';
             }}
             return 'UNKNOWN';
@@ -225,43 +243,58 @@ def main():
         function updatePowerBIUrl() {{
             const iframe = document.getElementById('powerbi-iframe');
             if (!iframe) {{
-                console.log('Iframe não encontrado!');
+                console.log('[Power BI] Iframe não encontrado! Aguardando...');
+                // Tenta novamente após 200ms
+                setTimeout(updatePowerBIUrl, 200);
                 return;
             }}
             
             const isMobile = isMobileView();
             const targetUrl = isMobile ? mobileUrl : desktopUrl;
-            const currentUrlType = getCurrentUrlType(iframe.src);
+            const currentSrc = iframe.src || '';
+            const currentUrlType = getCurrentUrlType(currentSrc);
             
-            // Compara usando includes para garantir que funciona mesmo com parâmetros adicionais
-            const shouldUpdate = isMobile 
-                ? !iframe.src.includes('a02c9e61-ca48-4fee-87fb-732616424882')
-                : !iframe.src.includes('461bfacf-024d-4a61-8149-7f8966c1ee3b');
+            // Verifica se precisa atualizar (verifica o reportId na URL)
+            const hasMobileReport = currentSrc.includes(MOBILE_REPORT_ID);
+            const hasDesktopReport = currentSrc.includes(DESKTOP_REPORT_ID);
+            const shouldUpdate = isMobile ? !hasMobileReport : !hasDesktopReport;
             
-            console.log('Estado atual:', {{
-                largura: window.innerWidth || document.documentElement.clientWidth,
+            console.log('[Power BI] Estado atual:', {{
+                largura: getViewportWidth(),
                 isMobile: isMobile,
                 urlAtual: currentUrlType,
                 urlAlvo: isMobile ? 'MOBILE' : 'DESKTOP',
-                deveAtualizar: shouldUpdate
+                deveAtualizar: shouldUpdate,
+                srcAtual: currentSrc.substring(0, 100) + '...'
             }});
             
             // Atualiza o src do iframe se necessário
             if (shouldUpdate) {{
-                console.log('Atualizando URL do Power BI para:', isMobile ? 'MOBILE' : 'DESKTOP');
-                iframe.src = targetUrl;
-                console.log('URL atualizada com sucesso!');
+                console.log('[Power BI] ⚠️ Atualizando URL do Power BI para:', isMobile ? 'MOBILE' : 'DESKTOP');
+                console.log('[Power BI] Nova URL:', targetUrl.substring(0, 100) + '...');
+                // Força atualização limpando o src primeiro (pode ajudar em alguns casos)
+                iframe.src = '';
+                setTimeout(function() {{
+                    iframe.src = targetUrl;
+                    console.log('[Power BI] ✅ URL atualizada com sucesso!');
+                }}, 50);
             }} else {{
-                console.log('URL já está correta, não precisa atualizar.');
+                console.log('[Power BI] ✓ URL já está correta:', currentUrlType);
             }}
         }}
         
         // Executa quando o DOM estiver pronto
         function initPowerBI() {{
+            console.log('[Power BI] Inicializando detecção mobile/desktop...');
             // Aguarda um pouco para garantir que o iframe foi renderizado
             setTimeout(function() {{
                 updatePowerBIUrl();
-            }}, 100);
+            }}, 200);
+            
+            // Tenta novamente após mais tempo (caso o iframe demore mais)
+            setTimeout(function() {{
+                updatePowerBIUrl();
+            }}, 1000);
         }}
         
         // Executa quando a página carrega
@@ -275,24 +308,55 @@ def main():
         let resizeTimeout;
         window.addEventListener('resize', function() {{
             clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(updatePowerBIUrl, 150);
+            resizeTimeout = setTimeout(function() {{
+                console.log('[Power BI] Janela redimensionada, verificando...');
+                updatePowerBIUrl();
+            }}, 200);
         }});
         
         // Atualiza quando a orientação do dispositivo muda
         window.addEventListener('orientationchange', function() {{
-            setTimeout(updatePowerBIUrl, 200);
+            console.log('[Power BI] Orientação mudou, verificando...');
+            setTimeout(updatePowerBIUrl, 300);
         }});
         
-        // Monitora mudanças no tamanho da viewport usando MutationObserver (fallback)
+        // Monitora mudanças no tamanho usando ResizeObserver
         if (window.ResizeObserver) {{
-            const resizeObserver = new ResizeObserver(function(entries) {{
-                updatePowerBIUrl();
-            }});
-            const container = document.querySelector('.powerbi-container');
-            if (container) {{
-                resizeObserver.observe(container);
+            try {{
+                const resizeObserver = new ResizeObserver(function(entries) {{
+                    for (let entry of entries) {{
+                        const width = entry.contentRect.width;
+                        console.log('[Power BI] ResizeObserver detectou largura:', width);
+                        updatePowerBIUrl();
+                    }}
+                }});
+                
+                // Observa o container
+                const container = document.querySelector('.powerbi-container');
+                if (container) {{
+                    resizeObserver.observe(container);
+                    console.log('[Power BI] ResizeObserver configurado no container');
+                }}
+                
+                // Também observa o body/document
+                resizeObserver.observe(document.body);
+            }} catch(e) {{
+                console.log('[Power BI] ResizeObserver não disponível ou erro:', e);
             }}
         }}
+        
+        // Polling adicional como fallback (verifica a cada 2 segundos se o tamanho mudou)
+        let lastWidth = getViewportWidth();
+        setInterval(function() {{
+            const currentWidth = getViewportWidth();
+            if (Math.abs(currentWidth - lastWidth) > 10) {{ // Mudou mais de 10px
+                console.log('[Power BI] Polling detectou mudança de largura:', lastWidth, '→', currentWidth);
+                lastWidth = currentWidth;
+                updatePowerBIUrl();
+            }}
+        }}, 2000);
+        
+        console.log('[Power BI] Script de detecção mobile/desktop carregado!');
     </script>
     """
     
