@@ -199,7 +199,7 @@ def main():
                 title="acompanhamento_servicos_seinfra"
                 width="100%" 
                 height="100%" 
-                src="{POWER_BI_EMBED_URL}&pageName=ReportSection"
+                src="{POWER_BI_EMBED_URL}"
                 frameborder="0" 
                 allowFullScreen="true"
                 allow="fullscreen; clipboard-read; clipboard-write; autoplay; camera; microphone; payment"
@@ -260,11 +260,41 @@ def main():
                 // Força largura absoluta em pixels para mobile (max 767px para garantir < 768)
                 const mobileWidth = Math.min(viewportWidth, 767);
                 
+                // Força também o wrapper e container para garantir que tudo seja <= 767px
+                const wrapper = iframe.parentElement;
+                const container = wrapper ? wrapper.parentElement : null;
+                
+                // Sempre ajusta tamanho quando em mobile
+                console.log('[Power BI] ⚠️ MOBILE detectado - Ajustando largura:', mobileWidth + 'px');
+                console.log('[Power BI] Largura atual iframe:', currentIframeWidth, 'px');
+                console.log('[Power BI] Largura wrapper:', wrapper ? wrapper.offsetWidth : 'N/A', 'px');
+                console.log('[Power BI] Largura container:', container ? container.offsetWidth : 'N/A', 'px');
+                
+                // Força largura no wrapper primeiro
+                if (wrapper) {{
+                    wrapper.style.width = mobileWidth + 'px';
+                    wrapper.style.maxWidth = mobileWidth + 'px';
+                    wrapper.style.minWidth = mobileWidth + 'px';
+                }}
+                
+                // Força largura no container
+                if (container) {{
+                    container.style.width = mobileWidth + 'px';
+                    container.style.maxWidth = mobileWidth + 'px';
+                }}
+                
+                // Força largura no iframe
+                iframe.style.width = mobileWidth + 'px';
+                iframe.style.maxWidth = mobileWidth + 'px';
+                iframe.style.minWidth = mobileWidth + 'px';
+                iframe.setAttribute('width', mobileWidth);
+                iframe.width = mobileWidth;
+                
                 // Sempre recria se for mobile e o iframe não estiver com largura correta
                 const needsReload = currentIframeWidth > 767 || Math.abs(currentIframeWidth - mobileWidth) > 10;
                 
                 if (needsReload) {{
-                    console.log('[Power BI] ⚠️ MOBILE detectado - Forçando largura:', mobileWidth + 'px (iframe atual:', currentIframeWidth + 'px)');
+                    console.log('[Power BI] Recriando iframe para garantir detecção mobile...');
                     
                     // Recria o iframe com largura fixa em pixels
                     const iframeParent = iframe.parentNode;
@@ -280,7 +310,9 @@ def main():
                         newIframe.title = iframeTitle;
                         newIframe.width = mobileWidth + 'px'; // Largura absoluta em pixels
                         newIframe.height = '100%';
-                        newIframe.src = powerBIUrl;
+                        // Adiciona timestamp para evitar cache
+                        const cacheBuster = '&t=' + new Date().getTime();
+                        newIframe.src = powerBIUrl + cacheBuster;
                         newIframe.frameBorder = '0';
                         newIframe.allowFullScreen = true;
                         newIframe.setAttribute('allow', iframeAllow || 'fullscreen; clipboard-read; clipboard-write; autoplay; camera; microphone; payment');
@@ -292,14 +324,50 @@ def main():
                         
                         console.log('[Power BI] ✅ Iframe MOBILE recriado com largura ABSOLUTA:', mobileWidth + 'px');
                         
-                        // Verifica após carregar
+                        // Verifica após carregar - múltiplas verificações
+                        let checkCount = 0;
                         newIframe.onload = function() {{
-                            console.log('[Power BI] Iframe carregado. Largura verificada:', newIframe.offsetWidth, 'px (deve ser <= 767px)');
-                            if (newIframe.offsetWidth > 767) {{
-                                console.log('[Power BI] ⚠️ ATENÇÃO: Iframe ainda tem largura > 767px! Forçando novamente...');
+                            checkCount++;
+                            const actualWidth = newIframe.offsetWidth;
+                            const wrapperWidth = newIframe.parentElement ? newIframe.parentElement.offsetWidth : 0;
+                            
+                            console.log('[Power BI] Verificação #' + checkCount + ' - Iframe carregado.');
+                            console.log('[Power BI] Largura iframe:', actualWidth, 'px (deve ser <= 767px)');
+                            console.log('[Power BI] Largura wrapper:', wrapperWidth, 'px');
+                            console.log('[Power BI] Largura viewport:', getViewportWidth(), 'px');
+                            
+                            if (actualWidth > 767) {{
+                                console.log('[Power BI] ⚠️ PROBLEMA: Iframe ainda > 767px! Largura:', actualWidth, 'px');
+                                console.log('[Power BI] Forçando correção...');
+                                
+                                // Força múltiplas vezes
                                 newIframe.style.width = mobileWidth + 'px';
                                 newIframe.style.maxWidth = mobileWidth + 'px';
+                                newIframe.style.minWidth = mobileWidth + 'px';
                                 newIframe.setAttribute('width', mobileWidth);
+                                newIframe.width = mobileWidth;
+                                
+                                // Força wrapper também
+                                if (newIframe.parentElement) {{
+                                    newIframe.parentElement.style.width = mobileWidth + 'px';
+                                    newIframe.parentElement.style.maxWidth = mobileWidth + 'px';
+                                }}
+                                
+                                // Verifica novamente após delay
+                                if (checkCount < 3) {{
+                                    setTimeout(function() {{
+                                        const finalWidth = newIframe.offsetWidth;
+                                        console.log('[Power BI] Verificação final - Largura:', finalWidth, 'px');
+                                        if (finalWidth <= 767) {{
+                                            console.log('[Power BI] ✅ SUCESSO! Largura correta agora. Power BI deve detectar mobile.');
+                                        }} else {{
+                                            console.error('[Power BI] ❌ FALHA: Ainda com largura', finalWidth, 'px');
+                                            console.error('[Power BI] O container do Streamlit pode estar forçando largura maior.');
+                                        }}
+                                    }}, 1000);
+                                }}
+                            }} else {{
+                                console.log('[Power BI] ✅ Largura correta! Power BI deve detectar mobile agora.');
                             }}
                         }};
                     }}, 100);
