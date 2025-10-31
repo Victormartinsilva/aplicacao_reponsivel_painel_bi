@@ -35,14 +35,20 @@ st.markdown("""
 
         /* Remove margens padrão do Streamlit */
         .main .block-container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
         }
 
         /* Oculta elementos padrão do Streamlit para layout limpo */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}
+        
+        /* Reduz espaçamento do título */
+        h1 {
+            margin-bottom: 0.5rem !important;
+            padding-bottom: 0 !important;
+        }
 
         /* Container para o wrapper do Power BI */
         .powerbi-container {
@@ -50,7 +56,8 @@ st.markdown("""
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 10px;
+            padding: 5px 10px;
+            margin-top: 0;
         }
 
         .powerbi-embed-wrapper {
@@ -91,7 +98,8 @@ st.markdown("""
         */
         @media (max-width: 768px) {
             .powerbi-container {
-                padding: 5px;
+                padding: 5px 10px;
+                margin-top: 0;
             }
 
             .powerbi-embed-wrapper {
@@ -111,7 +119,7 @@ st.markdown("""
                 background-color: #ffeb3b; /* Amarelo claro */
                 color: #333;
                 font-weight: bold;
-                margin-bottom: 10px;
+                margin-bottom: 5px;
                 border-radius: 5px;
             }
         }
@@ -129,7 +137,7 @@ st.markdown("""
                 background-color: #4caf50; /* Verde */
                 color: white;
                 font-weight: bold;
-                margin-bottom: 10px;
+                margin-bottom: 5px;
                 border-radius: 5px;
             }
         }
@@ -139,7 +147,8 @@ st.markdown("""
             width: 100%;
             max-width: 1200px; /* Mesma largura máxima do wrapper */
             margin: 0 auto;
-            padding: 10px;
+            padding: 5px 10px;
+            margin-bottom: 0;
         }
     </style>
 """, unsafe_allow_html=True)
