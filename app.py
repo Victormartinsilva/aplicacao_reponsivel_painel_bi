@@ -310,12 +310,28 @@ def main():
         - Funciona tanto em dispositivos reais quanto ao dar zoom na página.
         - As '@media queries' CSS ajustam o layout e exibem o indicador de dispositivo.
         
-        **⚠️ Problemas de Autenticação:**
-        - Se o painel pede para entrar mas não abre, você precisa estar logado no Power BI no mesmo navegador.
-        - Certifique-se de que você tem permissões para visualizar o relatório.
-        - O `autoAuth=true` funciona apenas se você já estiver autenticado no Power BI no mesmo navegador.
-        - Tente abrir o relatório diretamente no Power BI primeiro para garantir que tem acesso.
-        - Em caso de problemas, verifique o console do navegador (F12) para mensagens de erro.
+        **⚠️ Problemas de Autenticação - SOLUÇÃO:**
+        
+        **Passo 1 - Permitir Cookies de Terceiros:**
+        - No Chrome: Configurações → Privacidade e segurança → Cookies → Permitir cookies de terceiros
+        - No Edge: Configurações → Cookies e permissões de site → Permitir cookies de terceiros
+        - No Firefox: Configurações → Privacidade → Não rastrear → Desativar (temporariamente para testar)
+        
+        **Passo 2 - Autenticar no Power BI:**
+        1. Abra uma nova aba no mesmo navegador
+        2. Acesse: https://app.powerbi.com
+        3. Faça login na sua conta Microsoft/Office 365
+        4. Verifique se consegue ver o relatório diretamente no Power BI
+        5. Volte para esta aplicação e recarregue a página (F5)
+        
+        **Passo 3 - Testar URL Diretamente:**
+        - Abra em nova aba: [URL Mobile](https://app.powerbi.com/reportEmbed?reportId=a02c9e61-ca48-4fee-87fb-732616424882&autoAuth=true&ctid=04e74123-4ede-4a84-89ef-b7c6dfe29df8&actionBarEnabled=true)
+        - Se abrir diretamente mas não no iframe, o problema pode ser bloqueio de cookies de terceiros
+        
+        **Passo 4 - Verificar Console (F12):**
+        - Pressione F12 → Console
+        - Procure por erros relacionados a "cookie", "authentication" ou "CORS"
+        - Compartilhe os erros se persistir
         """)
 
 
