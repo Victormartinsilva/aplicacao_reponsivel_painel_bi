@@ -4,17 +4,18 @@ Aplicação Web com Streamlit para Incorporação de Painel Power BI.
 
 Este script Python utiliza o framework Streamlit para criar uma aplicação web.
 O objetivo é incorporar um painel do Power BI de forma responsiva para
-visualização em dispositivos móveis e desktop.
+visualização em dispositivos móveis e desktop, trocando automaticamente
+entre diferentes URLs do Power BI baseado no tamanho da viewport.
 """
 
 import streamlit as st
 
-# URL de incorporação (embed) do painel do Power BI fornecida pelo usuário.
-# É importante notar que esta URL já contém os parâmetros de autenticação
-# (autoAuth=true e ctid), o que simplifica a incorporação, mas em um
-# ambiente de produção real, seria necessário um método de autenticação
-# mais seguro (como o Power BI Embedded com Service Principal ou Master User).
-POWER_BI_EMBED_URL = "https://app.powerbi.com/reportEmbed?reportId=461bfacf-024d-4a61-8149-7f8966c1ee3b&autoAuth=true&ctid=04e74123-4ede-4a84-89ef-b7c6dfe29df8"
+# URLs de incorporação (embed) do painel do Power BI
+# URL para visualização Desktop
+POWER_BI_EMBED_URL_DESKTOP = "https://app.powerbi.com/reportEmbed?reportId=461bfacf-024d-4a61-8149-7f8966c1ee3b&autoAuth=true&ctid=04e74123-4ede-4a84-89ef-b7c6dfe29df8"
+
+# URL para visualização Mobile
+POWER_BI_EMBED_URL_MOBILE = "https://app.powerbi.com/reportEmbed?reportId=a02c9e61-ca48-4fee-87fb-732616424882&autoAuth=true&ctid=04e74123-4ede-4a84-89ef-b7c6dfe29df8"
 
 # Configuração da página Streamlit
 st.set_page_config(
@@ -158,12 +159,64 @@ def main():
     st.markdown('<div class="powerbi-container">', unsafe_allow_html=True)
     st.markdown('<div class="powerbi-embed-wrapper">', unsafe_allow_html=True)
     
-    # Incorporação do Power BI usando componentes do Streamlit
-    st.components.v1.iframe(
-        src=POWER_BI_EMBED_URL,
-        height=600,
-        scrolling=True
-    )
+    # HTML com JavaScript para detectar tamanho da viewport e trocar URL dinamicamente
+    # Isso funciona mesmo com zoom, pois monitora o tamanho real da viewport
+    powerbi_html = f"""
+    <iframe 
+        id="powerbi-iframe" 
+        title="acompanhamento_servicos_seinfra"
+        width="100%" 
+        height="100%" 
+        src="{POWER_BI_EMBED_URL_DESKTOP}"
+        frameborder="0" 
+        allowFullScreen="true"
+        style="position: absolute; top: 0; left: 0; border: none;"
+    ></iframe>
+    
+    <script>
+        // Função para verificar se deve usar versão mobile (baseado na largura da viewport)
+        function isMobileView() {{
+            return window.innerWidth <= 768;
+        }}
+        
+        // Função para atualizar o iframe baseado no tamanho da viewport
+        function updatePowerBIUrl() {{
+            const iframe = document.getElementById('powerbi-iframe');
+            const isMobile = isMobileView();
+            
+            // URLs das versões Desktop e Mobile
+            const desktopUrl = "{POWER_BI_EMBED_URL_DESKTOP}";
+            const mobileUrl = "{POWER_BI_EMBED_URL_MOBILE}";
+            
+            // Define a URL baseado no tamanho da viewport
+            const targetUrl = isMobile ? mobileUrl : desktopUrl;
+            
+            // Atualiza o src do iframe apenas se for diferente
+            if (iframe.src !== targetUrl) {{
+                iframe.src = targetUrl;
+                console.log('Power BI URL atualizada para:', isMobile ? 'MOBILE' : 'DESKTOP');
+            }}
+        }}
+        
+        // Atualiza quando a página carrega
+        updatePowerBIUrl();
+        
+        // Atualiza quando a janela é redimensionada (inclui zoom)
+        let resizeTimeout;
+        window.addEventListener('resize', function() {{
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(updatePowerBIUrl, 150);
+        }});
+        
+        // Atualiza quando a orientação do dispositivo muda
+        window.addEventListener('orientationchange', function() {{
+            setTimeout(updatePowerBIUrl, 200);
+        }});
+    </script>
+    """
+    
+    # Incorpora o HTML com JavaScript usando st.components.v1.html()
+    st.components.v1.html(powerbi_html, height=600)
     
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
@@ -172,10 +225,11 @@ def main():
     with st.expander("ℹ️ Sobre esta aplicação"):
         st.markdown("""
         **Nota didática:**
-        - A responsividade é alcançada principalmente pelo CSS.
-        - O 'viewport' meta tag garante que a página se ajuste à largura do dispositivo.
-        - As '@media queries' ajustam o layout e adicionam o indicador de dispositivo
-          com base na largura da tela (<= 768px para mobile, > 768px para desktop).
+        - A responsividade é alcançada através de JavaScript que monitora o tamanho da viewport.
+        - O sistema detecta automaticamente quando a largura da tela é <= 768px (incluindo zoom).
+        - Quando detecta visualização mobile, troca automaticamente para a URL do Power BI mobile.
+        - Funciona tanto em dispositivos reais quanto ao dar zoom na página.
+        - As '@media queries' CSS ajustam o layout e exibem o indicador de dispositivo.
         """)
 
 
