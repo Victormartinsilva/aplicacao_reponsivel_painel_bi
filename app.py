@@ -120,9 +120,9 @@ st.markdown("""
                 max-width: none;
             }
 
-            /* Adiciona uma mensagem para indicar que é a visualização mobile */
+            /* Adiciona uma mensagem para indicar que é a visualização mobile (padrão) */
             .device-indicator::before {
-                content: "Visualização Mobile (Ajuste de Layout)";
+                content: "Visualização Mobile (Layout Inicial)";
                 display: block;
                 text-align: center;
                 padding: 10px;
@@ -138,9 +138,9 @@ st.markdown("""
         * Media Query para dispositivos desktop (largura mínima de 769px).
         */
         @media (min-width: 769px) {
-            /* Adiciona uma mensagem para indicar que é a visualização desktop */
+            /* Adiciona uma mensagem para indicar que é a visualização desktop (ao dar zoom > 768px) */
             .device-indicator::before {
-                content: "Visualização Desktop (Layout Otimizado)";
+                content: "Visualização Desktop - Layout Web (Zoom > 768px)";
                 display: block;
                 text-align: center;
                 padding: 10px;
