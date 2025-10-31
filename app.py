@@ -15,7 +15,7 @@ import streamlit as st
 POWER_BI_EMBED_URL_DESKTOP = "https://app.powerbi.com/reportEmbed?reportId=461bfacf-024d-4a61-8149-7f8966c1ee3b&autoAuth=true&ctid=04e74123-4ede-4a84-89ef-b7c6dfe29df8"
 
 # URL para visualização Mobile
-POWER_BI_EMBED_URL_MOBILE = "https://app.powerbi.com/reportEmbed?reportId=a02c9e61-ca48-4fee-87fb-732616424882&autoAuth=true&ctid=04e74123-4ede-4a84-89ef-b7c6dfe29df8"
+POWER_BI_EMBED_URL_MOBILE = "https://app.powerbi.com/reportEmbed?reportId=a02c9e61-ca48-4fee-87fb-732616424882&autoAuth=true&ctid=04e74123-4ede-4a84-89ef-b7c6dfe29df8&actionBarEnabled=true"
 
 # Configuração da página Streamlit
 st.set_page_config(
