@@ -128,29 +128,27 @@ A URL atual inclui os parâmetros:
 
 ## 🌐 Deploy no Streamlit Cloud
 
-### Preparação
+### Preparação ✅ Concluída
 
-1. **Certifique-se de que o projeto está no Git**:
-   ```bash
-   git add .
-   git commit -m "Preparação para deploy"
-   git push origin main
-   ```
+- ✅ Projeto no GitHub: `https://github.com/Victormartinsilva/aplicacao_reponsivel_painel_bi`
+- ✅ Arquivo `.streamlit/config.toml` criado
+- ✅ Todos os arquivos commitados e enviados
 
-2. **Crie um arquivo `.streamlit/config.toml`** (opcional):
-   ```toml
-   [server]
-   headless = true
-   port = 8501
-   ```
+### 📖 Guias de Deploy
 
-### Deploy
+Para instruções detalhadas, consulte:
+- **Passo a Passo Completo:** [`PASSO_A_PASSO_DEPLOY.md`](PASSO_A_PASSO_DEPLOY.md)
+- **Guia Rápido:** [`DEPLOY.md`](DEPLOY.md)
 
-1. Acesse [Streamlit Cloud](https://streamlit.io/cloud)
-2. Conecte seu repositório GitHub/GitLab/Bitbucket
-3. Selecione o repositório e branch
-4. Configure o comando de execução: `streamlit run app.py`
-5. Clique em "Deploy"
+### 🚀 Deploy Rápido
+
+1. Acesse [Streamlit Cloud](https://share.streamlit.io/)
+2. Faça login com sua conta GitHub
+3. Clique em **"New app"**
+4. Selecione o repositório: `aplicacao_reponsivel_painel_bi`
+5. **Main file path:** `app.py`
+6. Clique em **"Deploy!"**
+7. Aguarde 1-3 minutos e receba sua URL pública
 
 ## 🛠️ Tecnologias Utilizadas
 
