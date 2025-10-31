@@ -290,19 +290,55 @@ def main():
                     const newIframe = document.createElement('iframe');
                     newIframe.id = iframeId;
                     newIframe.title = iframeTitle;
-                    newIframe.width = '100%';
+                    
+                    // IMPORTANTE: Define largura absoluta em pixels para mobile
+                    // O Power BI detecta o tamanho do iframe para decidir se renderiza em mobile
+                    const viewportWidth = getViewportWidth();
+                    if (isMobile) {{
+                        // Força largura pequena para mobile (em pixels)
+                        newIframe.width = Math.min(viewportWidth, 768) + 'px';
+                        console.log('[Power BI] Iframe mobile configurado com largura:', newIframe.width);
+                    }} else {{
+                        newIframe.width = '100%';
+                    }}
+                    
                     newIframe.height = '100%';
                     newIframe.src = targetUrl;
                     newIframe.frameBorder = '0';
                     newIframe.allowFullScreen = true;
                     newIframe.setAttribute('allow', iframeAllow || 'fullscreen; clipboard-read; clipboard-write; autoplay; camera; microphone; payment');
-                    newIframe.setAttribute('style', iframeStyle || 'position: absolute; top: 0; left: 0; border: none;');
+                    
+                    // Define estilo com largura absoluta para mobile
+                    if (isMobile) {{
+                        newIframe.setAttribute('style', 'position: absolute; top: 0; left: 0; border: none; width: ' + Math.min(viewportWidth, 768) + 'px; max-width: 768px;');
+                    }} else {{
+                        newIframe.setAttribute('style', iframeStyle || 'position: absolute; top: 0; left: 0; border: none;');
+                    }}
+                    
+                    // Adiciona atributo data-mobile para forçar detecção
+                    if (isMobile) {{
+                        newIframe.setAttribute('data-mobile', 'true');
+                    }}
                     
                     // Adiciona o novo iframe de volta ao DOM
                     iframeParent.appendChild(newIframe);
                     
                     console.log('[Power BI] ✅ Iframe recriado com URL', isMobile ? 'MOBILE' : 'DESKTOP');
+                    console.log('[Power BI] Largura do iframe:', newIframe.width);
                     console.log('[Power BI] Nova URL completa:', targetUrl);
+                    
+                    // Força redimensionamento após carregar para garantir que o Power BI detecte
+                    newIframe.onload = function() {{
+                        console.log('[Power BI] Iframe carregado. Largura atual:', newIframe.offsetWidth);
+                        // Dispara um evento de resize para o Power BI detectar
+                        if (isMobile && newIframe.contentWindow) {{
+                            try {{
+                                newIframe.contentWindow.dispatchEvent(new Event('resize'));
+                            }} catch(e) {{
+                                console.log('[Power BI] Não foi possível disparar resize no iframe:', e);
+                            }}
+                        }}
+                    }};
                 }}, 100);
             }} else {{
                 console.log('[Power BI] ✓ URL já está correta:', currentUrlType);
