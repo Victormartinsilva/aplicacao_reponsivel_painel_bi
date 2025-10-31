@@ -373,11 +373,20 @@ def main():
         
         // Polling adicional como fallback (verifica a cada 2 segundos se o tamanho mudou)
         let lastWidth = getViewportWidth();
+        let lastWasMobile = null;
         setInterval(function() {{
             const currentWidth = getViewportWidth();
-            if (Math.abs(currentWidth - lastWidth) > 10) {{ // Mudou mais de 10px
-                console.log('[Power BI] Polling detectou mudança de largura:', lastWidth, '→', currentWidth);
+            const currentIsMobile = currentWidth <= 768;
+            
+            // Verifica se mudou significativamente (mais de 10px) OU se mudou de mobile/desktop
+            if (Math.abs(currentWidth - lastWidth) > 10 || (lastWasMobile !== null && lastWasMobile !== currentIsMobile)) {{
+                if (lastWasMobile !== null && lastWasMobile !== currentIsMobile) {{
+                    console.log('[Power BI] Polling detectou mudança de modo:', lastWasMobile ? 'MOBILE' : 'DESKTOP', '→', currentIsMobile ? 'MOBILE' : 'DESKTOP');
+                }} else {{
+                    console.log('[Power BI] Polling detectou mudança de largura:', lastWidth, '→', currentWidth);
+                }}
                 lastWidth = currentWidth;
+                lastWasMobile = currentIsMobile;
                 updatePowerBIUrl();
             }}
         }}, 2000);
