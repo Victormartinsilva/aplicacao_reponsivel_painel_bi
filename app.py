@@ -529,12 +529,13 @@ def main():
         let lastWasMobile = null;
         setInterval(function() {{
             const currentWidth = getViewportWidth();
+            // INVERTIDO: mobile quando <= 768px (padrão), desktop quando > 768px
             const currentIsMobile = currentWidth <= 768;
             
-            // Verifica se mudou significativamente (mais de 10px) OU se mudou de mobile/desktop
+            // Verifica se mudou significativamente (mais de 10px) OU se mudou de modo
             if (Math.abs(currentWidth - lastWidth) > 10 || (lastWasMobile !== null && lastWasMobile !== currentIsMobile)) {{
                 if (lastWasMobile !== null && lastWasMobile !== currentIsMobile) {{
-                    console.log('[Power BI] Polling detectou mudança de modo:', lastWasMobile ? 'MOBILE' : 'DESKTOP', '→', currentIsMobile ? 'MOBILE' : 'DESKTOP');
+                    console.log('[Power BI] Polling detectou mudança de modo:', lastWasMobile ? 'MOBILE (<=768px - padrão)' : 'DESKTOP (>768px - zoom)', '→', currentIsMobile ? 'MOBILE (<=768px - padrão)' : 'DESKTOP (>768px - zoom)');
                 }} else {{
                     console.log('[Power BI] Polling detectou mudança de largura:', lastWidth, '→', currentWidth);
                 }}
