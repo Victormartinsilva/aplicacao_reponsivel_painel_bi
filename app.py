@@ -15,7 +15,8 @@ import streamlit as st
 POWER_BI_EMBED_URL_DESKTOP = "https://app.powerbi.com/reportEmbed?reportId=461bfacf-024d-4a61-8149-7f8966c1ee3b&autoAuth=true&ctid=04e74123-4ede-4a84-89ef-b7c6dfe29df8"
 
 # URL para visualização Mobile
-POWER_BI_EMBED_URL_MOBILE = "https://app.powerbi.com/reportEmbed?reportId=a02c9e61-ca48-4fee-87fb-732616424882&autoAuth=true&ctid=04e74123-4ede-4a84-89ef-b7c6dfe29df8&actionBarEnabled=true"
+# Adiciona parâmetros para forçar layout mobile: config=eyJjbHVzdGVyVXJsIjoiaHR0cHM6Ly9yZWRpcmVjdC5hbmFseXNpcy53aW5kb3dzLm5ldCJ9
+POWER_BI_EMBED_URL_MOBILE = "https://app.powerbi.com/reportEmbed?reportId=a02c9e61-ca48-4fee-87fb-732616424882&autoAuth=true&ctid=04e74123-4ede-4a84-89ef-b7c6dfe29df8&actionBarEnabled=true&filterPaneEnabled=true&navContentPaneEnabled=true"
 
 # Configuração da página Streamlit
 st.set_page_config(
@@ -272,12 +273,37 @@ def main():
             if (shouldUpdate) {{
                 console.log('[Power BI] ⚠️ Atualizando URL do Power BI para:', isMobile ? 'MOBILE' : 'DESKTOP');
                 console.log('[Power BI] Nova URL:', targetUrl.substring(0, 100) + '...');
-                // Força atualização limpando o src primeiro (pode ajudar em alguns casos)
-                iframe.src = '';
+                
+                // Força reload completo do iframe para garantir que o Power BI renderiza em mobile
+                // Remove o iframe do DOM temporariamente e recria
+                const iframeParent = iframe.parentNode;
+                const iframeId = iframe.id;
+                const iframeTitle = iframe.title;
+                const iframeStyle = iframe.getAttribute('style');
+                const iframeAllow = iframe.getAttribute('allow');
+                
+                // Remove o iframe atual
+                iframe.remove();
+                
+                // Cria novo iframe com a URL correta
                 setTimeout(function() {{
-                    iframe.src = targetUrl;
-                    console.log('[Power BI] ✅ URL atualizada com sucesso!');
-                }}, 50);
+                    const newIframe = document.createElement('iframe');
+                    newIframe.id = iframeId;
+                    newIframe.title = iframeTitle;
+                    newIframe.width = '100%';
+                    newIframe.height = '100%';
+                    newIframe.src = targetUrl;
+                    newIframe.frameBorder = '0';
+                    newIframe.allowFullScreen = true;
+                    newIframe.setAttribute('allow', iframeAllow || 'fullscreen; clipboard-read; clipboard-write; autoplay; camera; microphone; payment');
+                    newIframe.setAttribute('style', iframeStyle || 'position: absolute; top: 0; left: 0; border: none;');
+                    
+                    // Adiciona o novo iframe de volta ao DOM
+                    iframeParent.appendChild(newIframe);
+                    
+                    console.log('[Power BI] ✅ Iframe recriado com URL', isMobile ? 'MOBILE' : 'DESKTOP');
+                    console.log('[Power BI] Nova URL completa:', targetUrl);
+                }}, 100);
             }} else {{
                 console.log('[Power BI] ✓ URL já está correta:', currentUrlType);
             }}
