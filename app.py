@@ -192,6 +192,8 @@ def main():
                 src="{POWER_BI_EMBED_URL_DESKTOP}"
                 frameborder="0" 
                 allowFullScreen="true"
+                allow="fullscreen; clipboard-read; clipboard-write"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
                 style="position: absolute; top: 0; left: 0; border: none;"
             ></iframe>
         </div>
@@ -299,7 +301,7 @@ def main():
     # A altura será controlada pelo CSS padding-bottom do wrapper
     st.components.v1.html(powerbi_html, height=650, scrolling=False)
     
-    # Nota informativa
+    # Nota informativa e ajuda com autenticação
     with st.expander("ℹ️ Sobre esta aplicação"):
         st.markdown("""
         **Nota didática:**
@@ -308,6 +310,13 @@ def main():
         - Quando detecta visualização mobile, troca automaticamente para a URL do Power BI mobile.
         - Funciona tanto em dispositivos reais quanto ao dar zoom na página.
         - As '@media queries' CSS ajustam o layout e exibem o indicador de dispositivo.
+        
+        **⚠️ Problemas de Autenticação:**
+        - Se o painel pede para entrar mas não abre, você precisa estar logado no Power BI no mesmo navegador.
+        - Certifique-se de que você tem permissões para visualizar o relatório.
+        - O `autoAuth=true` funciona apenas se você já estiver autenticado no Power BI no mesmo navegador.
+        - Tente abrir o relatório diretamente no Power BI primeiro para garantir que tem acesso.
+        - Em caso de problemas, verifique o console do navegador (F12) para mensagens de erro.
         """)
 
 
