@@ -312,7 +312,15 @@ def main():
                         newIframe.height = '100%';
                         // Adiciona timestamp para evitar cache
                         const cacheBuster = '&t=' + new Date().getTime();
-                        newIframe.src = powerBIUrl + cacheBuster;
+                        // Tenta adicionar parâmetros na URL para forçar mobile (pode não funcionar, mas tentamos)
+                        // O Power BI pode ignorar esses parâmetros quando embedado via navegador
+                        let mobileUrl = powerBIUrl + cacheBuster;
+                        // Tenta adicionar config via URL (pode não funcionar)
+                        if (!mobileUrl.includes('config=')) {{
+                            // Nota: Power BI pode não aceitar isso, pois layout mobile só funciona no app
+                            mobileUrl += '&config=' + encodeURIComponent('{{"settings":{{"layoutType":"MobilePortrait"}}}}');
+                        }}
+                        newIframe.src = mobileUrl;
                         newIframe.frameBorder = '0';
                         newIframe.allowFullScreen = true;
                         newIframe.setAttribute('allow', iframeAllow || 'fullscreen; clipboard-read; clipboard-write; autoplay; camera; microphone; payment');
