@@ -190,27 +190,27 @@ def main():
     # Indicador de dispositivo (Desktop/Mobile) usando HTML
     st.markdown('<div class="device-indicator"></div>', unsafe_allow_html=True)
     
-    # HTML completo com container, wrapper e iframe - tudo em um componente para posicionamento correto
+    # HTML completo com container, wrapper e div para embed do Power BI usando API JavaScript
     powerbi_html = f"""
+    <!-- Carrega a biblioteca JavaScript do Power BI -->
+    <script src="https://cdn.jsdelivr.net/npm/powerbi-client@2.21.1/dist/powerbi.min.js"></script>
+    
     <div class="powerbi-container">
         <div class="powerbi-embed-wrapper">
-            <iframe 
-                id="powerbi-iframe" 
-                title="acompanhamento_servicos_seinfra"
-                width="100%" 
-                height="100%" 
-                src="{POWER_BI_EMBED_URL}"
-                frameborder="0" 
-                allowFullScreen="true"
-                allow="fullscreen; clipboard-read; clipboard-write; autoplay; camera; microphone; payment"
-                style="position: absolute; top: 0; left: 0; border: none; width: 767px; max-width: 767px;"
-            ></iframe>
+            <div id="powerbi-embed-container" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0;"></div>
         </div>
     </div>
     
     <script>
-        // URL única do Power BI - ele detecta automaticamente mobile/desktop pelo tamanho do iframe
+        // URL do Power BI
         const powerBIUrl = "{POWER_BI_EMBED_URL}";
+        // Extrai reportId da URL
+        const reportIdMatch = powerBIUrl.match(/reportId=([^&]+)/);
+        const reportId = reportIdMatch ? reportIdMatch[1] : null;
+        const embedUrl = powerBIUrl.split('?')[0].replace('/reportEmbed', '/view') + '?' + powerBIUrl.split('?')[1];
+        
+        console.log('[Power BI] Report ID:', reportId);
+        console.log('[Power BI] Embed URL:', embedUrl);
         
         // Função para obter largura da viewport (funciona mesmo em iframe)
         function getViewportWidth() {{
@@ -238,13 +238,15 @@ def main():
             return isMobile; // Retorna true quando queremos manter mobile (width <= 768px)
         }}
         
-        // Função para atualizar o tamanho do iframe (Power BI detecta automaticamente o layout)
-        function updatePowerBISize() {{
-            const iframe = document.getElementById('powerbi-iframe');
-            if (!iframe) {{
-                console.log('[Power BI] Iframe não encontrado! Aguardando...');
-                // Tenta novamente após 200ms
-                setTimeout(updatePowerBISize, 200);
+        // Variável global para armazenar o embed do Power BI
+        let powerbiEmbed = null;
+        
+        // Função para criar/atualizar o embed do Power BI usando API JavaScript
+        function updatePowerBIEmbed() {{
+            const container = document.getElementById('powerbi-embed-container');
+            if (!container) {{
+                console.log('[Power BI] Container não encontrado! Aguardando...');
+                setTimeout(updatePowerBIEmbed, 200);
                 return;
             }}
             
@@ -254,226 +256,153 @@ def main():
             console.log('[Power BI] Estado atual:', {{
                 largura: viewportWidth,
                 isMobile: isMobile,
-                larguraAtualIframe: iframe.offsetWidth
+                containerWidth: container.offsetWidth
             }});
             
-            // Atualiza o tamanho do iframe - o Power BI detecta automaticamente e renderiza em mobile
-            const currentIframeWidth = iframe.offsetWidth;
+            // Verifica se a biblioteca Power BI está carregada
+            if (typeof powerbi === 'undefined') {{
+                console.log('[Power BI] Biblioteca Power BI ainda não carregou. Aguardando...');
+                setTimeout(updatePowerBIEmbed, 500);
+                return;
+            }}
             
-            // INVERTIDO: isMobile agora significa <= 768px (manter mobile/pequeno)
-            // Quando > 768px, trocar para desktop (web)
+            // Verifica se reportId foi extraído
+            if (!reportId) {{
+                console.error('[Power BI] Não foi possível extrair reportId da URL!');
+                return;
+            }}
+            
+            // Determina o layoutType baseado no tamanho
+            // INVERTIDO: isMobile = <= 768px (queremos mobile)
+            // Quando > 768px, queremos desktop/web
+            const layoutType = isMobile ? powerbi.models.LayoutType.MobilePortrait : powerbi.models.LayoutType.Master;
+            
+            const mobileWidth = 767;
+            
+            // Configura largura do container
             if (isMobile) {{
-                // Mantém mobile: largura 767px (pequeno)
-                const mobileWidth = 767;
+                container.style.width = mobileWidth + 'px';
+                container.style.maxWidth = mobileWidth + 'px';
+                container.style.minWidth = mobileWidth + 'px';
                 
-                // Força também o wrapper e container para garantir que tudo seja <= 767px
-                const wrapper = iframe.parentElement;
-                const container = wrapper ? wrapper.parentElement : null;
+                // Força também o wrapper e container pai
+                const wrapper = container.parentElement;
+                const containerParent = wrapper ? wrapper.parentElement : null;
                 
-                // Sempre ajusta tamanho quando em mobile
-                console.log('[Power BI] ⚠️ MOBILE detectado - Ajustando largura:', mobileWidth + 'px');
-                console.log('[Power BI] Largura atual iframe:', currentIframeWidth, 'px');
-                console.log('[Power BI] Largura wrapper:', wrapper ? wrapper.offsetWidth : 'N/A', 'px');
-                console.log('[Power BI] Largura container:', container ? container.offsetWidth : 'N/A', 'px');
-                
-                // Força largura no wrapper primeiro
                 if (wrapper) {{
                     wrapper.style.width = mobileWidth + 'px';
                     wrapper.style.maxWidth = mobileWidth + 'px';
                     wrapper.style.minWidth = mobileWidth + 'px';
                 }}
                 
-                // Força largura no container
-                if (container) {{
-                    container.style.width = mobileWidth + 'px';
-                    container.style.maxWidth = mobileWidth + 'px';
-                }}
-                
-                // Força largura no iframe
-                iframe.style.width = mobileWidth + 'px';
-                iframe.style.maxWidth = mobileWidth + 'px';
-                iframe.style.minWidth = mobileWidth + 'px';
-                iframe.setAttribute('width', mobileWidth);
-                iframe.width = mobileWidth;
-                
-                // Sempre recria se for mobile e o iframe não estiver com largura correta
-                const needsReload = currentIframeWidth > 767 || Math.abs(currentIframeWidth - mobileWidth) > 10;
-                
-                if (needsReload) {{
-                    console.log('[Power BI] Recriando iframe para garantir detecção mobile...');
-                    
-                    // Recria o iframe com largura fixa em pixels
-                    const iframeParent = iframe.parentNode;
-                    const iframeId = iframe.id;
-                    const iframeTitle = iframe.title;
-                    const iframeAllow = iframe.getAttribute('allow');
-                    
-                    iframe.remove();
-                    
-                    setTimeout(function() {{
-                        const newIframe = document.createElement('iframe');
-                        newIframe.id = iframeId;
-                        newIframe.title = iframeTitle;
-                        newIframe.width = mobileWidth + 'px'; // Largura absoluta em pixels
-                        newIframe.height = '100%';
-                        // Adiciona timestamp para evitar cache
-                        const cacheBuster = '&t=' + new Date().getTime();
-                        // Tenta adicionar parâmetros na URL para forçar mobile (pode não funcionar, mas tentamos)
-                        // O Power BI pode ignorar esses parâmetros quando embedado via navegador
-                        let mobileUrl = powerBIUrl + cacheBuster;
-                        // Tenta adicionar config via URL (pode não funcionar)
-                        if (!mobileUrl.includes('config=')) {{
-                            // Nota: Power BI pode não aceitar isso, pois layout mobile só funciona no app
-                            mobileUrl += '&config=' + encodeURIComponent('{{"settings":{{"layoutType":"MobilePortrait"}}}}');
-                        }}
-                        newIframe.src = mobileUrl;
-                        newIframe.frameBorder = '0';
-                        newIframe.allowFullScreen = true;
-                        newIframe.setAttribute('allow', iframeAllow || 'fullscreen; clipboard-read; clipboard-write; autoplay; camera; microphone; payment');
-                        
-                        // Define estilo com largura fixa ABSOLUTA para mobile
-                        newIframe.setAttribute('style', 'position: absolute; top: 0; left: 0; border: none; width: ' + mobileWidth + 'px !important; max-width: ' + mobileWidth + 'px !important; min-width: ' + mobileWidth + 'px !important;');
-                        
-                        iframeParent.appendChild(newIframe);
-                        
-                        console.log('[Power BI] ✅ Iframe MOBILE recriado com largura ABSOLUTA:', mobileWidth + 'px');
-                        
-                        // Verifica após carregar - múltiplas verificações
-                        let checkCount = 0;
-                        newIframe.onload = function() {{
-                            checkCount++;
-                            const actualWidth = newIframe.offsetWidth;
-                            const wrapperWidth = newIframe.parentElement ? newIframe.parentElement.offsetWidth : 0;
-                            
-                            console.log('[Power BI] Verificação #' + checkCount + ' - Iframe carregado.');
-                            console.log('[Power BI] Largura iframe:', actualWidth, 'px (deve ser <= 767px)');
-                            console.log('[Power BI] Largura wrapper:', wrapperWidth, 'px');
-                            console.log('[Power BI] Largura viewport:', getViewportWidth(), 'px');
-                            
-                            if (actualWidth > 767) {{
-                                console.log('[Power BI] ⚠️ PROBLEMA: Iframe ainda > 767px! Largura:', actualWidth, 'px');
-                                console.log('[Power BI] Forçando correção...');
-                                
-                                // Força múltiplas vezes
-                                newIframe.style.width = mobileWidth + 'px';
-                                newIframe.style.maxWidth = mobileWidth + 'px';
-                                newIframe.style.minWidth = mobileWidth + 'px';
-                                newIframe.setAttribute('width', mobileWidth);
-                                newIframe.width = mobileWidth;
-                                
-                                // Força wrapper também
-                                if (newIframe.parentElement) {{
-                                    newIframe.parentElement.style.width = mobileWidth + 'px';
-                                    newIframe.parentElement.style.maxWidth = mobileWidth + 'px';
-                                }}
-                                
-                                // Verifica novamente após delay
-                                if (checkCount < 3) {{
-                                    setTimeout(function() {{
-                                        const finalWidth = newIframe.offsetWidth;
-                                        console.log('[Power BI] Verificação final - Largura:', finalWidth, 'px');
-                                        if (finalWidth <= 767) {{
-                                            console.log('[Power BI] ✅ SUCESSO! Largura correta agora. Power BI deve detectar mobile.');
-                                        }} else {{
-                                            console.error('[Power BI] ❌ FALHA: Ainda com largura', finalWidth, 'px');
-                                            console.error('[Power BI] O container do Streamlit pode estar forçando largura maior.');
-                                        }}
-                                    }}, 1000);
-                                }}
-                            }} else {{
-                                console.log('[Power BI] ✅ Largura correta! Power BI deve detectar mobile agora.');
-                            }}
-                        }};
-                    }}, 100);
-                    return;
-                }} else {{
-                    console.log('[Power BI] ✓ Iframe já está com largura correta para mobile:', currentIframeWidth + 'px');
+                if (containerParent) {{
+                    containerParent.style.width = mobileWidth + 'px';
+                    containerParent.style.maxWidth = mobileWidth + 'px';
                 }}
             }} else {{
-                // DESKTOP (quando viewport > 768px): largura 100% para ver layout web
-                console.log('[Power BI] ⚠️ DESKTOP detectado (viewport > 768px) - Trocando para layout WEB');
+                container.style.width = '100%';
+                container.style.maxWidth = 'none';
+                container.style.minWidth = 'none';
                 
-                // Para desktop, verifica se precisa recriar (se está ainda com largura mobile)
-                const currentWidth = iframe.offsetWidth;
-                const needsReload = currentWidth <= 767;
+                const wrapper = container.parentElement;
+                const containerParent = wrapper ? wrapper.parentElement : null;
                 
-                if (needsReload) {{
-                    console.log('[Power BI] Mudando de MOBILE (767px) para DESKTOP (100%) - Recriando iframe...');
-                    const iframeParent = iframe.parentNode;
-                    const iframeId = iframe.id;
-                    const iframeTitle = iframe.title;
-                    const iframeAllow = iframe.getAttribute('allow');
-                    
-                    iframe.remove();
-                    
-                    setTimeout(function() {{
-                        const newIframe = document.createElement('iframe');
-                        newIframe.id = iframeId;
-                        newIframe.title = iframeTitle;
-                        newIframe.width = '100%';
-                        newIframe.height = '100%';
-                        // Adiciona timestamp para evitar cache
-                        const cacheBuster = '&t=' + new Date().getTime();
-                        newIframe.src = powerBIUrl + cacheBuster;
-                        newIframe.frameBorder = '0';
-                        newIframe.allowFullScreen = true;
-                        newIframe.setAttribute('allow', iframeAllow || 'fullscreen; clipboard-read; clipboard-write; autoplay; camera; microphone; payment');
-                        newIframe.setAttribute('style', 'position: absolute; top: 0; left: 0; border: none; width: 100%; max-width: none;');
-                        
-                        iframeParent.appendChild(newIframe);
-                        console.log('[Power BI] ✅ Iframe DESKTOP recriado com largura 100% - Layout WEB ativado');
-                        
-                        // Limpa tamanhos fixos do wrapper quando desktop
-                        const wrapper = newIframe.parentElement;
-                        if (wrapper) {{
-                            wrapper.style.width = '100%';
-                            wrapper.style.maxWidth = 'none';
-                            wrapper.style.minWidth = 'none';
-                        }}
-                        
-                        const container = wrapper ? wrapper.parentElement : null;
-                        if (container) {{
-                            container.style.width = '100%';
-                            container.style.maxWidth = 'none';
-                        }}
-                    }}, 100);
-                }} else {{
-                    // Já está em desktop, apenas ajusta
-                    iframe.style.width = '100%';
-                    iframe.style.maxWidth = 'none';
-                    iframe.style.minWidth = 'none';
-                    
-                    // Limpa tamanhos fixos do wrapper
-                    const wrapper = iframe.parentElement;
-                    if (wrapper) {{
-                        wrapper.style.width = '100%';
-                        wrapper.style.maxWidth = 'none';
-                        wrapper.style.minWidth = 'none';
-                    }}
-                    
-                    const container = wrapper ? wrapper.parentElement : null;
-                    if (container) {{
-                        container.style.width = '100%';
-                        container.style.maxWidth = 'none';
-                    }}
-                    
-                    console.log('[Power BI] ✓ Iframe já está configurado para DESKTOP (100%)');
+                if (wrapper) {{
+                    wrapper.style.width = '100%';
+                    wrapper.style.maxWidth = 'none';
+                    wrapper.style.minWidth = 'none';
                 }}
+                
+                if (containerParent) {{
+                    containerParent.style.width = '100%';
+                    containerParent.style.maxWidth = 'none';
+                }}
+            }}
+            
+            console.log('[Power BI] Configurando layout:', isMobile ? 'MOBILE (MobilePortrait)' : 'DESKTOP (Master/Web)');
+            
+            // Se já existe um embed, remove antes de criar novo
+            if (powerbiEmbed) {{
+                try {{
+                    powerbiEmbed.destroy();
+                    console.log('[Power BI] Embed anterior destruído');
+                }} catch(e) {{
+                    console.log('[Power BI] Erro ao destruir embed anterior:', e);
+                }}
+                powerbiEmbed = null;
+            }}
+            
+            // Limpa o container
+            container.innerHTML = '';
+            
+            // Configuração do embed
+            const embedConfig = {{
+                type: 'report',
+                id: reportId,
+                embedUrl: embedUrl,
+                accessToken: '', // Vazio pois estamos usando autoAuth na URL
+                tokenType: powerbi.models.TokenType.Aad,
+                settings: {{
+                    layoutType: layoutType,
+                    filterPaneEnabled: true,
+                    navContentPaneEnabled: true,
+                    actionBarEnabled: true
+                }}
+            }};
+            
+            console.log('[Power BI] Configuração do embed:', embedConfig);
+            
+            // Tenta criar o embed
+            try {{
+                powerbiEmbed = powerbi.embed(container, embedConfig);
+                console.log('[Power BI] ✅ Embed criado com layout:', layoutType);
+                
+                // Aguarda o embed carregar
+                powerbiEmbed.on('loaded', function() {{
+                    console.log('[Power BI] ✅ Embed carregado com sucesso!');
+                    console.log('[Power BI] Layout atual:', layoutType);
+                }});
+                
+                powerbiEmbed.on('error', function(event) {{
+                    console.error('[Power BI] ❌ Erro ao carregar embed:', event.detail);
+                }});
+            }} catch(e) {{
+                console.error('[Power BI] ❌ Erro ao criar embed:', e);
+                console.error('[Power BI] Tentando fallback com iframe simples...');
+                
+                // Fallback: usa iframe simples se a API falhar
+                const iframe = document.createElement('iframe');
+                iframe.id = 'powerbi-iframe-fallback';
+                iframe.src = powerBIUrl;
+                iframe.frameBorder = '0';
+                iframe.allowFullScreen = true;
+                iframe.style.cssText = 'width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0;';
+                container.appendChild(iframe);
             }}
         }}
         
         // Executa quando o DOM estiver pronto
         function initPowerBI() {{
             console.log('[Power BI] Inicializando detecção mobile/desktop...');
-            // Aguarda um pouco para garantir que o iframe foi renderizado
-            setTimeout(function() {{
-                updatePowerBISize();
-            }}, 200);
+            // Aguarda biblioteca Power BI carregar
+            function waitForPowerBI() {{
+                if (typeof powerbi === 'undefined') {{
+                    console.log('[Power BI] Aguardando biblioteca Power BI carregar...');
+                    setTimeout(waitForPowerBI, 200);
+                    return;
+                }}
+                console.log('[Power BI] Biblioteca carregada! Criando embed...');
+                // Aguarda um pouco mais para garantir
+                setTimeout(function() {{
+                    updatePowerBIEmbed();
+                }}, 500);
+            }}
+            waitForPowerBI();
             
-            // Tenta novamente após mais tempo (caso o iframe demore mais)
+            // Tenta novamente após mais tempo
             setTimeout(function() {{
-                updatePowerBISize();
-            }}, 1000);
+                updatePowerBIEmbed();
+            }}, 2000);
         }}
         
         // Executa quando a página carrega
@@ -489,14 +418,14 @@ def main():
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(function() {{
                 console.log('[Power BI] Janela redimensionada, verificando...');
-                updatePowerBISize();
-            }}, 200);
+                updatePowerBIEmbed();
+            }}, 300);
         }});
         
         // Atualiza quando a orientação do dispositivo muda
         window.addEventListener('orientationchange', function() {{
             console.log('[Power BI] Orientação mudou, verificando...');
-            setTimeout(updatePowerBISize, 300);
+            setTimeout(updatePowerBIEmbed, 500);
         }});
         
         // Monitora mudanças no tamanho usando ResizeObserver
@@ -506,7 +435,7 @@ def main():
                     for (let entry of entries) {{
                         const width = entry.contentRect.width;
                         console.log('[Power BI] ResizeObserver detectou largura:', width);
-                        updatePowerBISize();
+                        updatePowerBIEmbed();
                     }}
                 }});
                 
@@ -541,7 +470,7 @@ def main():
                 }}
                 lastWidth = currentWidth;
                 lastWasMobile = currentIsMobile;
-                updatePowerBISize();
+                updatePowerBIEmbed();
             }}
         }}, 2000);
         
