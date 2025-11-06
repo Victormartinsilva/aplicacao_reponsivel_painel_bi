@@ -443,6 +443,20 @@ def main():
     st.components.v1.html(powerbi_html, height=650, scrolling=False)
     
     # Nota informativa e ajuda com autenticação
+    # Mensagem de ajuda se o Power BI não carregar
+    st.markdown("""
+    <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin: 10px 0;">
+        <strong>⚠️ Problema de Carregamento?</strong><br>
+        Se você vê apenas o ícone do Power BI mas o relatório não carrega:
+        <ol>
+            <li><strong>Abra o Console do Navegador</strong> (F12 → Console) e verifique se há erros</li>
+            <li><strong>Verifique se está autenticado:</strong> Abra uma nova aba e acesse <a href="https://app.fabric.microsoft.com" target="_blank">https://app.fabric.microsoft.com</a></li>
+            <li><strong>Permita cookies de terceiros</strong> nas configurações do navegador</li>
+            <li><strong>Recarregue a página</strong> (F5) após fazer login no Microsoft Fabric</li>
+        </ol>
+    </div>
+    """, unsafe_allow_html=True)
+    
     with st.expander("ℹ️ Sobre esta aplicação"):
         st.markdown("""
         **Nota didática:**
