@@ -13,7 +13,7 @@ import streamlit as st
 # URL de incorporação (embed) do painel do Power BI
 # Usamos a MESMA URL para ambos - o Power BI detecta automaticamente o tamanho do iframe
 # e renderiza em mobile quando a largura do iframe é <= 768px
-POWER_BI_EMBED_URL = "https://app.fabric.microsoft.com/reportEmbed?reportId=e7ad1863-00fe-4cd4-adde-b8b7db5435f9"
+POWER_BI_EMBED_URL = "https://app.powerbi.com/view?r=eyJrIjoiYWRjMWQyM2MtNzc5My00NmVhLTllMzEtY2Q4MmU3MGE2YzBmIiwidCI6IjA0ZTc0MTIzLTRlZGUtNGE4NC04OWVmLWI3YzZkZmUyOWRmOCJ9"
 
 # Configuração da página Streamlit
 st.set_page_config(
