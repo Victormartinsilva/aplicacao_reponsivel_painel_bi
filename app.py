@@ -204,6 +204,8 @@ def main():
                 allowFullScreen="true"
                 allow="fullscreen; clipboard-read; clipboard-write; autoplay; camera; microphone; payment"
                 style="position: absolute; top: 0; left: 0; border: none;"
+                onload="console.log('[Power BI] Iframe carregado');"
+                onerror="console.error('[Power BI] Erro ao carregar iframe');"
             ></iframe>
         </div>
     </div>
@@ -213,6 +215,34 @@ def main():
         const powerBIUrl = "{POWER_BI_EMBED_URL}";
         
         console.log('[Power BI] URL:', powerBIUrl);
+        console.log('[Power BI] Verificando se iframe está carregando...');
+        
+        // Monitora o carregamento do iframe
+        window.addEventListener('load', function() {{
+            const iframe = document.getElementById('powerbi-iframe');
+            if (iframe) {{
+                console.log('[Power BI] Iframe encontrado no DOM');
+                
+                // Verifica se o iframe carregou após 5 segundos
+                setTimeout(function() {{
+                    try {{
+                        // Tenta acessar o conteúdo do iframe (pode falhar por CORS)
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        console.log('[Power BI] Conseguiu acessar conteúdo do iframe');
+                    }} catch(e) {{
+                        console.log('[Power BI] Não conseguiu acessar conteúdo do iframe (normal por CORS):', e.message);
+                    }}
+                    
+                    // Verifica se há erros visíveis
+                    const iframeSrc = iframe.src;
+                    console.log('[Power BI] URL atual do iframe:', iframeSrc);
+                    console.log('[Power BI] Iframe width:', iframe.offsetWidth, 'px');
+                    console.log('[Power BI] Iframe height:', iframe.offsetHeight, 'px');
+                }}, 5000);
+            }} else {{
+                console.error('[Power BI] Iframe não encontrado no DOM!');
+            }}
+        }});
         
         // Função para obter largura da viewport (funciona mesmo em iframe)
         function getViewportWidth() {{
